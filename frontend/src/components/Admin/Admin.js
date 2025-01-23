@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import UserManagement from "./UserManagement/UserManagement";
+import GroupManagement from "./GroupManagement/GroupManagement";
 import "./Admin.css";
 
 const Admin = () => {
@@ -16,6 +17,12 @@ const Admin = () => {
           >
             User Management
           </button>
+          <button
+            className={`nav-button ${selectedTab === "group-management" ? "selected" : ""}`}
+            onClick={() => setSelectedTab("group-management")}
+          >
+            Group Management
+          </button>
         </nav>
       </aside>
 
@@ -25,12 +32,13 @@ const Admin = () => {
           <>
             <h1 className="admin-title">Admin Panel</h1>
             <p className="admin-text">
-              Welcome to the Admin panel. Manage users, roles, and settings here.
+              Welcome to the Admin panel. Manage users, groups, and settings here.
             </p>
           </>
         )}
 
         {selectedTab === "user-management" && <UserManagement />}
+        {selectedTab === "group-management" && <GroupManagement />}
       </main>
     </div>
   );

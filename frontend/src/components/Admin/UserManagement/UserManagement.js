@@ -91,6 +91,7 @@ const UserManagement = () => {
                 <th>Select</th>
                 <th>Username</th>
                 <th>Full Name</th>
+                <th>Group</th>
                 <th>Created Date</th>
                 <th>Status</th>
                 <th>Email Address</th>
@@ -110,6 +111,7 @@ const UserManagement = () => {
                     </td>
                     <td>{user.username}</td>
                     <td>{`${user.first_name} ${user.last_name}`}</td>
+                    <td>{user.group_name || "No Group"}</td>
                     <td>{new Date(user.created_date).toLocaleDateString()}</td>
                     <td className={`status ${user.status.toLowerCase()}`}>{user.status}</td>
                     <td>{user.email_address}</td>
@@ -118,7 +120,7 @@ const UserManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="no-users">No users found.</td>
+                  <td colSpan="8" className="no-users">No users found.</td>
                 </tr>
               )}
             </tbody>

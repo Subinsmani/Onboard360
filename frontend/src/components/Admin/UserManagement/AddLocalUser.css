@@ -1,61 +1,122 @@
+/* Modal Overlay - Dark Transparent Background */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
-  }
-  
-  .modal-container {
+    z-index: 1000;
+}
+
+/* Modal Box */
+.modal-container {
     background: white;
-    padding: 20px;
+    padding: 25px;
     border-radius: 10px;
-    width: 400px;
+    width: 420px;
+    max-width: 90%;
     text-align: center;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  .modal-container h2 {
-    margin-bottom: 15px;
-  }
-  
-  .modal-container input {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Title */
+.modal-container h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #333;
+}
+
+/* Input Fields & Select Dropdown */
+.modal-container input,
+.modal-container select {
     width: 100%;
-    padding: 8px;
-    margin: 5px 0;
-    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
     border-radius: 5px;
-  }
-  
-  .modal-buttons {
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Input & Select Focus Effect */
+.modal-container input:focus,
+.modal-container select:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 5px rgba(40, 167, 69, 0.5);
+}
+
+/* Dropdown Styling */
+.modal-container select {
+    appearance: none;
+    background: #fff;
+    cursor: pointer;
+}
+
+/* Button Container */
+.modal-buttons {
     display: flex;
     justify-content: space-between;
-    margin-top: 10px;
-  }
-  
-  .modal-buttons button {
-    padding: 8px 15px;
+    margin-top: 15px;
+}
+
+/* Buttons */
+.modal-buttons button {
+    flex: 1;
+    padding: 10px 15px;
     border: none;
     border-radius: 5px;
+    font-size: 14px;
     cursor: pointer;
-  }
-  
-  .modal-buttons button:first-child {
+    transition: background 0.3s ease-in-out;
+}
+
+/* Save Button */
+.modal-buttons button:first-child {
     background-color: #28a745;
     color: white;
-  }
-  
-  .modal-buttons button:last-child {
+    margin-right: 10px;
+}
+
+.modal-buttons button:first-child:hover {
+    background-color: #218838;
+}
+
+/* Cancel Button */
+.modal-buttons button:last-child {
     background-color: #dc3545;
     color: white;
-  }
-  
-  .error-message {
+}
+
+.modal-buttons button:last-child:hover {
+    background-color: #c82333;
+}
+
+/* Error Message */
+.error-message {
     color: red;
     font-size: 14px;
-  }
-  
+    margin-top: 10px;
+}
+
+/* Responsive Design for Mobile */
+@media (max-width: 500px) {
+    .modal-container {
+        width: 90%;
+        padding: 20px;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+    }
+
+    .modal-buttons button {
+        width: 100%;
+        margin-top: 8px;
+    }
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./AddLocalUser.css";
 
@@ -10,12 +10,27 @@ const AddLocalUser = ({ isOpen, onClose, onUserAdded }) => {
     email_address: "",
     phone_number: "",
     password: "",
+    group_id: "", // Added Group ID
   });
 
+  const [groups, setGroups] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (!isOpen) return null;
+  // ✅ Only fetch groups when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      axios
+        .get("http://localhost:4000/api/groups")
+        .then((response) => {
+          setGroups(response.data);
+        })
+        .catch((error) => {
+          console.error("Error fetching groups:", error);
+          setError("Failed to load groups.");
+        });
+    }
+  }, [isOpen]); // ✅ Dependency added to trigger only when `isOpen` changes
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -29,8 +44,8 @@ const AddLocalUser = ({ isOpen, onClose, onUserAdded }) => {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:4000/api/users", formData);
-      onUserAdded(response.data);
+      await axios.post("http://localhost:4000/api/users", formData);
+      onUserAdded(); // ✅ Refresh user list after adding
       onClose();
     } catch (err) {
       setError("Failed to add user. Please try again.");
@@ -38,6 +53,8 @@ const AddLocalUser = ({ isOpen, onClose, onUserAdded }) => {
 
     setLoading(false);
   };
+
+  if (!isOpen) return null; // ✅ Keeps Hooks running correctly
 
   return (
     <div className="modal-overlay">
@@ -51,6 +68,21 @@ const AddLocalUser = ({ isOpen, onClose, onUserAdded }) => {
           <input type="email" name="email_address" placeholder="Email Address" required onChange={handleChange} />
           <input type="tel" name="phone_number" placeholder="Phone Number" required onChange={handleChange} />
           <input type="password" name="password" placeholder="Password" required onChange={handleChange} />
+
+          {/* Group Dropdown */}
+          <select name="group_id" required onChange={handleChange} value={formData.group_id}>
+            <option value="">Select Group</option>
+            {groups.length > 0 ? (
+              groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))
+            ) : (
+              <option disabled>No groups available</option>
+            )}
+          </select>
+
           <div className="modal-buttons">
             <button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</button>
             <button type="button" onClick={onClose}>Cancel</button>

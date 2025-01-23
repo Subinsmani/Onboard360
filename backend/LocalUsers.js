@@ -34,8 +34,11 @@ db.getConnection((err, connection) => {
       status ENUM('Active', 'Inactive', 'Suspended') NOT NULL DEFAULT 'Active',
       disabled_date TIMESTAMP NULL DEFAULT NULL,
       email_address VARCHAR(255) UNIQUE NOT NULL,
-      phone_number VARCHAR(20) NOT NULL
+      phone_number VARCHAR(20) NOT NULL,
+      group_id INT DEFAULT NULL,
+      FOREIGN KEY (group_id) REFERENCES Groups(id) ON DELETE SET NULL
     )`;
+
   connection.query(createTableQuery, (err) => {
     if (err) console.error("Error ensuring LocalUser table exists:", err);
     else console.log("LocalUser table is ready.");
@@ -43,11 +46,11 @@ db.getConnection((err, connection) => {
   });
 });
 
-// ** Add a New Local User with Duplicate Check**
+// ** Add a New Local User with Group Selection**
 router.post('/users', async (req, res) => {
-  const { username, first_name, last_name, password, email_address, phone_number, status = "Active" } = req.body;
+  const { username, first_name, last_name, password, email_address, phone_number, group_id, status = "Active" } = req.body;
 
-  if (!username || !first_name || !last_name || !password || !email_address || !phone_number) {
+  if (!username || !first_name || !last_name || !password || !email_address || !phone_number || !group_id) {
     return res.status(400).json({ error: "All fields are required" });
   }
 
@@ -63,10 +66,10 @@ router.post('/users', async (req, res) => {
         return res.status(409).json({ error: "Username or Email already exists" });
       }
 
-      const insertSql = `INSERT INTO LocalUser (username, first_name, last_name, password, created_date, status, email_address, phone_number) 
-                         VALUES (?, ?, ?, ?, NOW(), ?, ?, ?)`;
+      const insertSql = `INSERT INTO LocalUser (username, first_name, last_name, password, created_date, status, email_address, phone_number, group_id) 
+                         VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)`;
 
-      db.query(insertSql, [username, first_name, last_name, hashedPassword, status, email_address, phone_number], (err, result) => {
+      db.query(insertSql, [username, first_name, last_name, hashedPassword, status, email_address, phone_number, group_id], (err, result) => {
         if (err) {
           return res.status(500).json({ error: err.message });
         }
@@ -79,9 +82,23 @@ router.post('/users', async (req, res) => {
   }
 });
 
-// ** Get All Local Users (Excluding Passwords)**
+// ** Get All Local Users with Group Name**
 router.get('/users', (req, res) => {
-  const sql = `SELECT id, username, first_name, last_name, created_date, status, email_address, phone_number FROM LocalUser`;
+  const sql = `
+    SELECT 
+      LocalUser.id, 
+      LocalUser.username, 
+      LocalUser.first_name, 
+      LocalUser.last_name, 
+      LocalUser.created_date, 
+      LocalUser.status, 
+      LocalUser.email_address, 
+      LocalUser.phone_number, 
+      Groups.name AS group_name
+    FROM LocalUser
+    LEFT JOIN Groups ON LocalUser.group_id = Groups.id
+  `;
+
   db.query(sql, (err, results) => {
     if (err) {
       return res.status(500).json({ error: "Database error" });
@@ -131,6 +148,17 @@ router.post('/login', (req, res) => {
     }
 
     res.json({ message: "Login successful", userId: user.id, username: user.username });
+  });
+});
+
+// ** Fetch Available Groups for Dropdown**
+router.get('/groups', (req, res) => {
+  const sql = `SELECT id, name FROM Groups`;
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(results);
   });
 });
 

@@ -1,28 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
+import UserManagement from "./UserManagement/UserManagement";
+import "./Admin.css";
 
 const Admin = () => {
-  const containerStyle = {
-    padding: "2em",
-    fontFamily: "Arial, sans-serif",
-  };
-
-  const titleStyle = {
-    fontSize: "2em",
-    fontWeight: "bold",
-    marginBottom: "1em",
-  };
-
-  const textStyle = {
-    fontSize: "1.2em",
-    lineHeight: "1.5",
-  };
+  const [selectedTab, setSelectedTab] = useState("dashboard");
 
   return (
-    <div style={containerStyle}>
-      <h1 style={titleStyle}>Admin Panel</h1>
-      <p style={textStyle}>
-        Welcome to the Admin panel. Manage users, roles, and settings here.
-      </p>
+    <div className="admin-container">
+      {/* Left Panel */}
+      <aside className="left-panel">
+        <nav className="nav-menu">
+          <button
+            className={`nav-button ${selectedTab === "user-management" ? "selected" : ""}`}
+            onClick={() => setSelectedTab("user-management")}
+          >
+            User Management
+          </button>
+        </nav>
+      </aside>
+
+      {/* Main Admin Content */}
+      <main className="admin-content">
+        {selectedTab === "dashboard" && (
+          <>
+            <h1 className="admin-title">Admin Panel</h1>
+            <p className="admin-text">
+              Welcome to the Admin panel. Manage users, roles, and settings here.
+            </p>
+          </>
+        )}
+
+        {selectedTab === "user-management" && <UserManagement />}
+      </main>
     </div>
   );
 };

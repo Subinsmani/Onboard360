@@ -10,10 +10,9 @@ const PORT = process.env.PORT || 4000;
 app.use(bodyParser.json());
 app.use(cors());
 
-// Example Route
-app.get('/', (req, res) => {
-  res.send('Welcome to Onboard360 API!');
-});
+// Import Local Users Routes
+const localUsersRoutes = require('./LocalUsers');
+app.use('/api', localUsersRoutes);
 
 // Start the Server
 app.listen(PORT, () => {

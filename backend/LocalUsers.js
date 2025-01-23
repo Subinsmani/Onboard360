@@ -20,7 +20,7 @@ db.getConnection((err, connection) => {
     console.error("Database Connection Failed:", err);
     return;
   }
-  console.log("Connected to MariaDB Database Onboard360");
+  console.log("✅ Connected to MariaDB Database Onboard360");
 
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS LocalUser (
@@ -41,7 +41,7 @@ db.getConnection((err, connection) => {
 
   connection.query(createTableQuery, (err) => {
     if (err) console.error("Error ensuring LocalUser table exists:", err);
-    else console.log("LocalUser table is ready.");
+    else console.log("✅ LocalUser table is ready.");
     connection.release();
   });
 });

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AddLocalUser from "./AddLocalUser";
+import DomainUser from "./DomainUser";
 import "./UserManagement.css";
 
 const UserManagement = () => {
@@ -8,6 +9,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isDomainUserOpen, setIsDomainUserOpen] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
 
   // Fetch Users from API
@@ -62,7 +64,7 @@ const UserManagement = () => {
       {/* Action Buttons */}
       <div className="user-management-header">
         <button className="add-user-btn" onClick={() => setIsAddUserOpen(true)}>+ Add Local User</button>
-        <button className="sync-user-btn">Sync User From Domain</button>
+        <button className="sync-user-btn" onClick={() => setIsDomainUserOpen(true)}>Sync User From Domain</button>
       </div>
 
       {/* Show Delete Button if Users are Selected */}
@@ -76,6 +78,9 @@ const UserManagement = () => {
 
       {/* Add Local User Modal */}
       <AddLocalUser isOpen={isAddUserOpen} onClose={() => setIsAddUserOpen(false)} onUserAdded={handleUserAdded} />
+
+      {/* Sync Users from Domain Modal */}
+      <DomainUser isOpen={isDomainUserOpen} onClose={() => setIsDomainUserOpen(false)} />
 
       {/* Error Message */}
       {error && <p className="error-message">{error}</p>}

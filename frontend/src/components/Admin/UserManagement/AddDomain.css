@@ -1,0 +1,117 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-container {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    width: 450px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .modal-container h2 {
+    margin-bottom: 15px;
+    font-size: 20px;
+    color: #333;
+  }
+  
+  /* Input Fields */
+  .modal-container input, .modal-container select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .modal-container input:focus, .modal-container select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  }
+  
+  /* SSL Dropdown */
+  .select-label {
+    display: block;
+    text-align: left;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  
+  /* Buttons */
+  .test-btn, .save-btn, .cancel-btn {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out;
+  }
+  
+  /* Test Button */
+  .test-btn {
+    background-color: #ffc107;
+    color: black;
+  }
+  
+  .test-btn:hover {
+    background-color: #e0a800;
+  }
+  
+  /* Save Button */
+  .save-btn {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .save-btn:hover {
+    background-color: #218838;
+  }
+  
+  /* Cancel Button */
+  .cancel-btn {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .cancel-btn:hover {
+    background-color: #c82333;
+  }
+  
+  /* Test Connection Result Messages */
+  .test-message {
+    font-size: 14px;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  
+  .test-message.success {
+    color: #28a745;
+  }
+  
+  .test-message.failed {
+    color: #dc3545;
+  }
+  
+  /* Error Message */
+  .error-message {
+    color: red;
+    font-size: 14px;
+    margin-top: 10px;
+  }
+  

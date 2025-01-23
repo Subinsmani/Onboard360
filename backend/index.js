@@ -10,11 +10,14 @@ const PORT = process.env.PORT || 4000;
 app.use(bodyParser.json());
 app.use(cors());
 
-// Import Local Users Routes
+// Import Routes
 const localUsersRoutes = require('./LocalUsers');
+const domainConnectionRoutes = require('./DomainConnection');
+
 app.use('/api', localUsersRoutes);
+app.use('/api', domainConnectionRoutes);
 
 // Start the Server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server is running on port ${PORT}`);
 });

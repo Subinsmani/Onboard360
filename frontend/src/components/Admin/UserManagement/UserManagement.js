@@ -7,6 +7,7 @@ import "./UserManagement.css";
 const UserManagement = () => {
   const [localUsers, setLocalUsers] = useState([]);
   const [domainUsers, setDomainUsers] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
@@ -14,60 +15,134 @@ const UserManagement = () => {
   const [selectedLocalUsers, setSelectedLocalUsers] = useState([]);
 
   useEffect(() => {
-    fetchUsers();
+    fetchAllData();
   }, []);
 
-  const fetchUsers = () => {
-    setLoading(true);
-    setError("");
+  /**
+   * Fetch all necessary data concurrently.
+   */
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      await Promise.all([fetchUsers(), fetchGroups()]);
 
-    axios.get("http://localhost:4000/api/localusers")
-      .then(response => {
-        setLocalUsers(response.data);
-      })
-      .catch(() => {
-        setError("Failed to load local users.");
-      });
-
-    axios.get("http://localhost:4000/api/domainusers")
-      .then(response => {
-        setDomainUsers(response.data);
-      })
-      .catch(() => {
-        setDomainUsers([]);
-      });
-
-    setLoading(false);
+      setLoading(false);
+    } catch (err) {
+      console.error("❌ Error fetching data:", err);
+      setError("Failed to load data.");
+      setLoading(false);
+    }
   };
 
+  /**
+   * Fetch both local and domain users.
+   */
+  const fetchUsers = async () => {
+    try {
+      // Fetch Local Users
+      const localUsersResponse = await axios.get("http://localhost:4000/api/localusers");
+      setLocalUsers(localUsersResponse.data);
+
+      // Fetch Domain Users
+      const domainUsersResponse = await axios.get("http://localhost:4000/api/domainusers");
+      setDomainUsers(domainUsersResponse.data);
+    } catch (error) {
+      console.error("❌ Error fetching users:", error);
+      setError("Failed to load users.");
+    }
+  };
+
+  /**
+   * Fetch groups from the backend.
+   */
+  const fetchGroups = async () => {
+    try {
+      const response = await axios.get("http://localhost:4000/api/groups");
+      setGroups(response.data);
+    } catch (error) {
+      console.error("❌ Error fetching groups:", error);
+      setError("Failed to load groups.");
+    }
+  };
+
+  /**
+   * Handler called when a new user is added.
+   */
   const handleUserAdded = () => {
-    fetchUsers();
+    fetchAllData();
   };
 
+  /**
+   * Handle checkbox state changes for selecting local users.
+   * @param {number|string} userId - The ID of the user.
+   */
   const handleCheckboxChange = (userId) => {
     setSelectedLocalUsers((prev) =>
       prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
-  const handleDeleteUsers = () => {
+  /**
+   * Handle deletion of selected local users.
+   */
+  const handleDeleteUsers = async () => {
     if (selectedLocalUsers.length === 0) return;
 
-    axios.post("http://localhost:4000/api/localusers/delete", { userIds: selectedLocalUsers })
-      .then(() => {
-        fetchUsers();
-        setSelectedLocalUsers([]);
-      })
-      .catch(() => {
-        setError("Failed to delete users.");
-      });
+    if (!window.confirm("Are you sure you want to delete the selected users?")) {
+      return;
+    }
+
+    try {
+      await axios.post("http://localhost:4000/api/localusers/delete", { userIds: selectedLocalUsers });
+      fetchAllData();
+      setSelectedLocalUsers([]);
+    } catch (error) {
+      console.error("❌ Failed to delete users:", error);
+      setError("Failed to delete selected users.");
+    }
+  };
+
+  /**
+   * Get the groups associated with a user based on their ID and type.
+   * @param {number|string} identifier - The ID of the user (local or ldap_user_id).
+   * @param {string} type - The type of user ("local" or "ldap").
+   * @returns {string} - A comma-separated list of group names or "No Group".
+   */
+  const getUserGroups = (identifier, type) => {
+    if (!identifier || !groups.length) {
+      return "No Group";
+    }
+
+    const identifierStr = identifier.toString();
+    const matchedGroups = groups.filter((group) => {
+      if (type === "local") {
+        return (
+          group.local_user_ids &&
+          group.local_user_ids.split(",").map((id) => id.trim()).includes(identifierStr)
+        );
+      } else if (type === "ldap") {
+        return (
+          group.ldap_user_ids &&
+          group.ldap_user_ids.split(",").map((id) => id.trim()).includes(identifierStr)
+        );
+      }
+      return false;
+    });
+
+    const groupNames = matchedGroups.map((group) => group.name).join(", ");
+    return groupNames || "No Group";
   };
 
   return (
     <div className="user-management-container">
       <div className="user-management-header">
-        <button className="add-user-btn" onClick={() => setIsAddUserOpen(true)}>+ Add Local User</button>
-        <button className="sync-user-btn" onClick={() => setIsDomainUserOpen(true)}>Sync Users From Domain</button>
+        <button className="add-user-btn" onClick={() => setIsAddUserOpen(true)}>
+          + Add Local User
+        </button>
+        <button className="sync-user-btn" onClick={() => setIsDomainUserOpen(true)}>
+          Sync Users From Domain
+        </button>
       </div>
 
       {selectedLocalUsers.length > 0 && (
@@ -78,15 +153,27 @@ const UserManagement = () => {
         </div>
       )}
 
-      <AddLocalUser isOpen={isAddUserOpen} onClose={() => setIsAddUserOpen(false)} onUserAdded={handleUserAdded} />
-      <DomainUser isOpen={isDomainUserOpen} onClose={() => setIsDomainUserOpen(false)} />
+      {/* Modal Components */}
+      <AddLocalUser
+        isOpen={isAddUserOpen}
+        onClose={() => setIsAddUserOpen(false)}
+        onUserAdded={handleUserAdded}
+      />
+      <DomainUser
+        isOpen={isDomainUserOpen}
+        onClose={() => setIsDomainUserOpen(false)}
+        onUserSynced={handleUserAdded}
+      />
 
-      {error && error !== "Failed to load local users." && <p className="error-message">{error}</p>}
+      {/* Error Message */}
+      {error && <p className="error-message">{error}</p>}
 
+      {/* Loading State */}
       {loading ? (
         <p className="loading-message">Loading users...</p>
       ) : (
         <div className="table-container">
+          {/* Local Users Table */}
           <h3>Local Users</h3>
           <table className="user-table">
             <thead>
@@ -114,7 +201,7 @@ const UserManagement = () => {
                     </td>
                     <td>{user.username}</td>
                     <td>{`${user.first_name} ${user.last_name}`}</td>
-                    <td>{user.group_name || "No Group"}</td>
+                    <td>{getUserGroups(user.id, "local")}</td>
                     <td>{new Date(user.created_date).toLocaleDateString()}</td>
                     <td className={`status ${user.status.toLowerCase()}`}>{user.status}</td>
                     <td>{user.email_address}</td>
@@ -123,12 +210,15 @@ const UserManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="no-users">No local users found.</td>
+                  <td colSpan="8" className="no-users">
+                    No local users found.
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
 
+          {/* Domain Users Table */}
           <h3>Domain Users</h3>
           <table className="user-table">
             <thead>
@@ -145,6 +235,7 @@ const UserManagement = () => {
             <tbody>
               {domainUsers.length > 0 ? (
                 domainUsers.map((user) => {
+                  // Determine Created Date
                   let createdDate = "N/A";
                   if (user.whencreated) {
                     try {
@@ -154,7 +245,7 @@ const UserManagement = () => {
                     }
                   }
 
-                  // Determine Status from `useraccountcontrol`
+                  // Determine Status
                   let status = "Inactive";
                   if (user.useraccountcontrol) {
                     const userControl = parseInt(user.useraccountcontrol, 10);
@@ -162,10 +253,10 @@ const UserManagement = () => {
                   }
 
                   return (
-                    <tr key={`domain-${user.samaccountname || user.id}`}>
-                      <td>{user.samaccountname}</td>
-                      <td>{user.displayname}</td>
-                      <td>{user.group_name || "No Group"}</td>
+                    <tr key={`domain-${user.ldap_user_id || user.samaccountname}`}>
+                      <td>{user.samaccountname || "N/A"}</td>
+                      <td>{user.displayname || "N/A"}</td>
+                      <td>{getUserGroups(user.ldap_user_id, "ldap")}</td>
                       <td>{createdDate}</td>
                       <td className={`status ${status.toLowerCase()}`}>{status}</td>
                       <td>{user.mail || "N/A"}</td>
@@ -175,7 +266,9 @@ const UserManagement = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" className="no-users">No domain users found.</td>
+                  <td colSpan="7" className="no-users">
+                    No domain users found.
+                  </td>
                 </tr>
               )}
             </tbody>

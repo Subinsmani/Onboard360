@@ -30,7 +30,7 @@ const AddLocalUser = ({ isOpen, onClose, onUserAdded }) => {
           setError("Failed to load groups.");
         });
     }
-  }, [isOpen]); // ✅ Dependency added to trigger only when `isOpen` changes
+  }, [isOpen]);
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -44,15 +44,15 @@ const AddLocalUser = ({ isOpen, onClose, onUserAdded }) => {
     setError("");
 
     try {
-      await axios.post("http://localhost:4000/api/localusers", formData);
-      onUserAdded(); // ✅ Refresh user list after adding
-      onClose();
+        await axios.post("http://localhost:4000/api/localusers", formData);
+        onUserAdded();
+        onClose();
     } catch (err) {
-      setError("Failed to add user. Please try again.");
+        setError("Failed to add user. Please try again.");
     }
 
     setLoading(false);
-  };
+};
 
   if (!isOpen) return null; // ✅ Keeps Hooks running correctly
 

@@ -419,7 +419,8 @@ function bufferToSID(buffer) {
 const ensureTableExists = () => {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS ldap_users (
-            samaccountname VARCHAR(255) PRIMARY KEY,
+            ldap_user_id INT AUTO_INCREMENT PRIMARY KEY,
+            samaccountname VARCHAR(255) UNIQUE,
             userprincipalname VARCHAR(255),
             cn VARCHAR(255),
             displayname VARCHAR(255),
@@ -626,6 +627,7 @@ router.get("/ldapusers", async (req, res) => {
 router.get('/domainusers', (req, res) => {
     const sql = `
         SELECT 
+            ldap_user_id,
             samaccountname, 
             userprincipalname,
             useraccountcontrol,

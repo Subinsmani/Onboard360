@@ -28,6 +28,22 @@
     position: relative;
 }
 
+.warning-message {
+    text-align: center;
+    color: #ffc107;
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 16px;
+    display: block;
+}
+
+/* Disabled Fetch User Button */
+.disabled-btn {
+    background-color: #ccc !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
 /* Title */
 .modal-container h2 {
     margin-bottom: 20px;
@@ -60,7 +76,7 @@
 /* Table Container */
 .table-container {
     width: 100%;
-    max-height: 500px;
+    max-height: 800px;
     overflow-y: auto;
     border-radius: 5px;
     padding: 10px;
@@ -166,30 +182,49 @@
     margin-top: 15px;
 }
 
-/* Close Button - Centered */
+/* Modal Buttons (Fetch User & Close Button Positioned Side by Side) */
 .modal-buttons {
     margin-top: auto;
     display: flex;
     justify-content: center;
-    width: 20%;
+    width: 30%;
     margin-left: auto;
     margin-right: auto;
 }
 
-.modal-buttons button {
+/* Fetch User Button */
+.fetch-user-btn {
+    background-color: #007bff;
+    color: white;
     padding: 14px 25px;
     border: none;
     border-radius: 5px;
     font-size: 16px;
     cursor: pointer;
-    background-color: #dc3545;
-    color: white;
     transition: background 0.3s ease-in-out, transform 0.2s;
-    width: 100%;
-    text-align: center;
+    width: 35%;
+    margin-right: 10px;
 }
 
-.modal-buttons button:hover {
+.fetch-user-btn:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+}
+
+/* Close Button */
+.close-btn {
+    background-color: #dc3545;
+    color: white;
+    padding: 14px 25px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease-in-out, transform 0.2s;
+    width: 20%;
+}
+
+.close-btn:hover {
     background-color: #c82333;
     transform: scale(1.05);
 }
@@ -238,6 +273,19 @@
     background-color: #c82333;
 }
 
+/* Adjust Checkbox Column Width */
+.domain-table th:first-child,
+.domain-table td:first-child {
+    text-align: center;
+    width: 50px;
+}
+
+/* Checkbox Styling */
+.domain-table input[type="checkbox"] {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
 /* Responsive Fix */
 @media (max-width: 768px) {
     .modal-container {
@@ -261,5 +309,10 @@
     .add-domain-btn {
         width: 40%;
         right: 10px;
+    }
+
+    /* Adjust modal buttons for mobile */
+    .modal-buttons {
+        text-align: center;
     }
 }

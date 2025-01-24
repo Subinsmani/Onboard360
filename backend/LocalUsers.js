@@ -47,7 +47,7 @@ db.getConnection((err, connection) => {
 });
 
 // ** Add a New Local User with Group Selection**
-router.post('/users', async (req, res) => {
+router.post('/localusers', async (req, res) => {
   const { username, first_name, last_name, password, email_address, phone_number, group_id, status = "Active" } = req.body;
 
   if (!username || !first_name || !last_name || !password || !email_address || !phone_number || !group_id) {
@@ -83,7 +83,7 @@ router.post('/users', async (req, res) => {
 });
 
 // ** Get All Local Users with Group Name**
-router.get('/users', (req, res) => {
+router.get('/localusers', (req, res) => {
   const sql = `
     SELECT 
       LocalUser.id, 
@@ -107,20 +107,20 @@ router.get('/users', (req, res) => {
   });
 });
 
-// ** Delete Selected Users**
-router.post('/users/delete', (req, res) => {
+// ** Delete Selected Local Users**
+router.post('/localusers/delete', (req, res) => {
   const { userIds } = req.body;
 
   if (!userIds || userIds.length === 0) {
-    return res.status(400).json({ error: "No users selected for deletion" });
+    return res.status(400).json({ error: "No local users selected for deletion" });
   }
 
   const sql = `DELETE FROM LocalUser WHERE id IN (?)`;
   db.query(sql, [userIds], (err, result) => {
     if (err) {
-      return res.status(500).json({ error: "Database error while deleting users" });
+      return res.status(500).json({ error: "Database error while deleting local users" });
     }
-    res.json({ message: `${result.affectedRows} users deleted successfully` });
+    res.json({ message: `${result.affectedRows} local users deleted successfully` });
   });
 });
 

@@ -5,91 +5,89 @@ import DomainUser from "./DomainUser";
 import "./UserManagement.css";
 
 const UserManagement = () => {
-  const [users, setUsers] = useState([]);
+  const [localUsers, setLocalUsers] = useState([]);
+  const [domainUsers, setDomainUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isDomainUserOpen, setIsDomainUserOpen] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedLocalUsers, setSelectedLocalUsers] = useState([]);
 
-  // Fetch Users from API
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const fetchUsers = () => {
-    axios.get("http://localhost:4000/api/users")
+    setLoading(true);
+    setError("");
+
+    axios.get("http://localhost:4000/api/localusers")
       .then(response => {
-        setUsers(response.data);
-        setLoading(false);
+        setLocalUsers(response.data);
       })
-      .catch(error => {
-        console.error("Error fetching users:", error);
-        setError("Failed to load users.");
-        setLoading(false);
+      .catch(() => {
+        setError("Failed to load local users.");
       });
+
+    axios.get("http://localhost:4000/api/domainusers")
+      .then(response => {
+        setDomainUsers(response.data);
+      })
+      .catch(() => {
+        setDomainUsers([]);
+      });
+
+    setLoading(false);
   };
 
-  // Handle user addition
   const handleUserAdded = () => {
     fetchUsers();
   };
 
-  // Handle checkbox selection
   const handleCheckboxChange = (userId) => {
-    setSelectedUsers((prevSelected) =>
-      prevSelected.includes(userId)
-        ? prevSelected.filter((id) => id !== userId)
-        : [...prevSelected, userId]
+    setSelectedLocalUsers((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
     );
   };
 
-  // Handle delete users
   const handleDeleteUsers = () => {
-    if (selectedUsers.length === 0) return;
+    if (selectedLocalUsers.length === 0) return;
 
-    axios.post("http://localhost:4000/api/users/delete", { userIds: selectedUsers })
+    axios.post("http://localhost:4000/api/localusers/delete", { userIds: selectedLocalUsers })
       .then(() => {
         fetchUsers();
-        setSelectedUsers([]);
+        setSelectedLocalUsers([]);
       })
-      .catch((error) => {
-        console.error("Error deleting users:", error);
+      .catch(() => {
         setError("Failed to delete users.");
       });
   };
 
   return (
     <div className="user-management-container">
-      {/* Action Buttons */}
       <div className="user-management-header">
         <button className="add-user-btn" onClick={() => setIsAddUserOpen(true)}>+ Add Local User</button>
-        <button className="sync-user-btn" onClick={() => setIsDomainUserOpen(true)}>Sync User From Domain</button>
+        <button className="sync-user-btn" onClick={() => setIsDomainUserOpen(true)}>Sync Users From Domain</button>
       </div>
 
-      {/* Show Delete Button if Users are Selected */}
-      {selectedUsers.length > 0 && (
+      {selectedLocalUsers.length > 0 && (
         <div className="delete-btn-container">
           <button className="delete-btn" onClick={handleDeleteUsers}>
-            Delete Selected ({selectedUsers.length})
+            Delete Selected Local Users ({selectedLocalUsers.length})
           </button>
         </div>
       )}
 
-      {/* Add Local User Modal */}
       <AddLocalUser isOpen={isAddUserOpen} onClose={() => setIsAddUserOpen(false)} onUserAdded={handleUserAdded} />
-
-      {/* Sync Users from Domain Modal */}
       <DomainUser isOpen={isDomainUserOpen} onClose={() => setIsDomainUserOpen(false)} />
 
-      {/* Error Message */}
-      {error && <p className="error-message">{error}</p>}
+      {error && error !== "Failed to load local users." && <p className="error-message">{error}</p>}
 
-      {/* Loading State */}
       {loading ? (
         <p className="loading-message">Loading users...</p>
       ) : (
         <div className="table-container">
+          <h3>Local Users</h3>
           <table className="user-table">
             <thead>
               <tr>
@@ -104,13 +102,13 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {users.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user.id}>
+              {localUsers.length > 0 ? (
+                localUsers.map((user) => (
+                  <tr key={`local-${user.id}`}>
                     <td>
                       <input
                         type="checkbox"
-                        checked={selectedUsers.includes(user.id)}
+                        checked={selectedLocalUsers.includes(user.id)}
                         onChange={() => handleCheckboxChange(user.id)}
                       />
                     </td>
@@ -125,7 +123,59 @@ const UserManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="no-users">No users found.</td>
+                  <td colSpan="8" className="no-users">No local users found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+
+          <h3>Domain Users</h3>
+          <table className="user-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Full Name</th>
+                <th>Group</th>
+                <th>Created Date</th>
+                <th>Status</th>
+                <th>Email Address</th>
+                <th>Phone Number</th>
+              </tr>
+            </thead>
+            <tbody>
+              {domainUsers.length > 0 ? (
+                domainUsers.map((user) => {
+                  let createdDate = "N/A";
+                  if (user.whencreated) {
+                    try {
+                      createdDate = new Date(user.whencreated).toLocaleDateString();
+                    } catch (error) {
+                      createdDate = "Invalid Date";
+                    }
+                  }
+
+                  // Determine Status from `useraccountcontrol`
+                  let status = "Inactive";
+                  if (user.useraccountcontrol) {
+                    const userControl = parseInt(user.useraccountcontrol, 10);
+                    status = (userControl & 0x2) === 0 ? "Active" : "Inactive";
+                  }
+
+                  return (
+                    <tr key={`domain-${user.samaccountname || user.id}`}>
+                      <td>{user.samaccountname}</td>
+                      <td>{user.displayname}</td>
+                      <td>{user.group_name || "No Group"}</td>
+                      <td>{createdDate}</td>
+                      <td className={`status ${status.toLowerCase()}`}>{status}</td>
+                      <td>{user.mail || "N/A"}</td>
+                      <td>{user.mobile || "N/A"}</td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan="7" className="no-users">No domain users found.</td>
                 </tr>
               )}
             </tbody>

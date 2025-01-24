@@ -44,7 +44,7 @@ const AddLocalUser = ({ isOpen, onClose, onUserAdded }) => {
     setError("");
 
     try {
-      await axios.post("http://localhost:4000/api/users", formData);
+      await axios.post("http://localhost:4000/api/localusers", formData);
       onUserAdded(); // ✅ Refresh user list after adding
       onClose();
     } catch (err) {

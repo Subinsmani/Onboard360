@@ -27,16 +27,25 @@
 
 .popup-content {
     text-align: center;
+    display: flex; /* Added to enable flex layout */
+    flex-direction: column; /* Stack child elements vertically */
+    align-items: center; /* Center child elements horizontally */
 }
 
 .popup-content h2 {
     margin-bottom: 10px;
 }
 
-.manage-group-content {
+.manage-group-content, /* Existing Users Management Row */
+.roles-management { /* 🆕 Roles Management Row */
     display: flex;
     align-items: center;
     justify-content: space-between;
+    width: 100%; /* Ensure full width */
+}
+
+.manage-group-content {
+    margin-bottom: 30px; /* Space between user and roles sections */
 }
 
 .user-list {
@@ -71,6 +80,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 10px; /* Added gap for better spacing */
 }
 
 .action-buttons button {
@@ -78,6 +88,16 @@
     padding: 10px;
     width: 50px;
     height: 50px;
+    cursor: pointer;
+    background-color: #007bff; /* Existing action buttons color */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.action-buttons button:hover {
+    background-color: #0056b3;
 }
 
 /* Updated Styles for Delete and Close Buttons */
@@ -110,6 +130,7 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    width: fit-content;
     transition: background-color 0.3s ease;
     font-size: 16px;
 }
@@ -122,6 +143,8 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
 }
 
 .user-table {
@@ -143,4 +166,90 @@
 .user-table tr.selected {
     background-color: #007bff;
     color: white;
+}
+
+/* 🆕 New Styles for Roles Management Section */
+.roles-management {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%; /* Ensure full width */
+}
+
+.roles-management .user-list {
+    width: 40%;
+    text-align: center;
+}
+
+.roles-management .action-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px; /* Added gap for better spacing */
+}
+
+.roles-management .action-buttons button {
+    font-size: 22px;
+    padding: 10px;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    background-color: #28a745; /* Green color for roles action buttons */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.roles-management .action-buttons button:hover {
+    background-color: #218838;
+}
+
+/* Highlight selected roles differently */
+.roles-management .user-table tr.selected {
+    background-color: #28a745; /* Green for selected roles */
+    color: white;
+}
+
+/* Ensure consistent table styling within roles-management */
+.roles-management .user-table th, 
+.roles-management .user-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.roles-management .user-table th {
+    background-color: #f8f9fa;
+}
+
+.roles-management .user-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* 🆕 Responsive Adjustments for Roles Management */
+@media (max-width: 900px) {
+    .manage-group-content, .roles-management {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .manage-group-content .action-buttons, 
+    .roles-management .action-buttons {
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .manage-group-content .action-buttons button, 
+    .roles-management .action-buttons button {
+        width: 40px;
+        height: 40px;
+    }
+
+    .manage-group-content .user-list, 
+    .roles-management .user-list {
+        width: 100%;
+    }
 }

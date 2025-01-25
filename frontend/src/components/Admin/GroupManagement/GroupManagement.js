@@ -1,5 +1,5 @@
 // GroupManagement.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import AddGroup from "./AddGroup";
 import ManageGroup from "./ManageGroup";
@@ -13,32 +13,48 @@ const GroupManagement = () => {
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [isManageGroupOpen, setIsManageGroupOpen] = useState(false);
 
-  useEffect(() => {
-    fetchGroups();
-  }, []);
-
-  // Fetch all groups from the backend.
-  const fetchGroups = async () => {
+  // Memoized function to fetch updated group data (Ensures reactivity)
+  const fetchGroups = useCallback(async () => {
     try {
-      const response = await axios.get("http://localhost:4000/api/groups");
-      setGroups(response.data); 
+      const groupsResponse = await axios.get("http://localhost:4000/api/groups");
+      const groupsData = groupsResponse.data;
+
+      // Fetch roles for each group using Promise.all
+      const rolePromises = groupsData.map(async (group) => {
+        try {
+          const rolesResponse = await axios.get(`http://localhost:4000/api/groups/${group.id}/roles`);
+          const role = rolesResponse.data.role_name || "N/A";
+          return { ...group, role };
+        } catch (error) {
+          console.error(`❌ Error fetching roles for group ${group.id}:`, error);
+          return { ...group, role: "N/A" };
+        }
+      });
+
+      const updatedGroups = await Promise.all(rolePromises);
+      setGroups(updatedGroups);
       setLoading(false);
     } catch (error) {
       console.error("❌ Error fetching groups:", error);
       setError("Failed to load groups.");
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchGroups();
+  }, [fetchGroups]);
 
   // Refresh groups after adding a new group.
   const handleGroupAdded = () => {
     fetchGroups();
   };
 
-  /**
-   * Handle group selection via checkbox.
-   * @param {number} groupId - The ID of the selected group.
-   */
+  // efresh groups when role is updated
+  const handleRoleUpdated = () => {
+    fetchGroups();
+  };
+
   const handleCheckboxChange = (groupId) => {
     setSelectedGroup(prevSelected => (prevSelected === groupId ? null : groupId));
   };
@@ -49,8 +65,8 @@ const GroupManagement = () => {
    */
   const handleGroupDeleted = (deletedGroupId) => {
     setGroups(prevGroups => prevGroups.filter(group => group.id !== deletedGroupId));
-    setSelectedGroup(null); // Deselect the group if it's deleted
-    setIsManageGroupOpen(false); // Close the Manage Group popup
+    setSelectedGroup(null);
+    setIsManageGroupOpen(false);
   };
 
   return (
@@ -77,13 +93,14 @@ const GroupManagement = () => {
       {/* Manage Group Modal */}
       {isManageGroupOpen && selectedGroup && (
         <>
-          <div className="popup-overlay"></div> {/* Overlay for blur effect */}
+          <div className="popup-overlay"></div>
           <div className="popup">
             <div className="popup-content">
               <ManageGroup 
                 groupId={selectedGroup} 
                 onClose={() => setIsManageGroupOpen(false)} 
-                onGroupDeleted={handleGroupDeleted} // Pass the deletion handler
+                onGroupDeleted={handleGroupDeleted}
+                onRoleUpdated={handleRoleUpdated}
               />
             </div>
           </div>
@@ -92,8 +109,6 @@ const GroupManagement = () => {
 
       {/* Display Error Message */}
       {error && <p className="error-message">{error}</p>}
-
-      {/* Display Loading Indicator or Groups Table */}
       {loading ? (
         <p className="loading-message">Loading groups...</p>
       ) : (

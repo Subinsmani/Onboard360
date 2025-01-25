@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import UserManagement from "./UserManagement/UserManagement";
 import GroupManagement from "./GroupManagement/GroupManagement";
+import RolesAndPermissions from "./RolesAndPermissions/RolesAndPermissions";
 import "./Admin.css";
 
 const Admin = () => {
@@ -23,6 +24,12 @@ const Admin = () => {
           >
             Group Management
           </button>
+          <button
+            className={`nav-button ${selectedTab === "roles-permissions" ? "selected" : ""}`}
+            onClick={() => setSelectedTab("roles-permissions")}
+          >
+            Roles & Permissions
+          </button>
         </nav>
       </aside>
 
@@ -32,13 +39,14 @@ const Admin = () => {
           <>
             <h1 className="admin-title">Admin Panel</h1>
             <p className="admin-text">
-              Welcome to the Admin panel. Manage users, groups, and settings here.
+              Welcome to the Admin panel. Manage users, groups, roles, and permissions here.
             </p>
           </>
         )}
 
         {selectedTab === "user-management" && <UserManagement />}
         {selectedTab === "group-management" && <GroupManagement />}
+        {selectedTab === "roles-permissions" && <RolesAndPermissions />}
       </main>
     </div>
   );

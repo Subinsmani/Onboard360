@@ -127,6 +127,35 @@ router.post("/login", async (req, res) => {
     }
 });
 
+// Local User Password Reset
+router.post('/localusers/resetpassword', async (req, res) => {
+    const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword) {
+        return res.status(400).json({ error: "User ID and new password are required" });
+    }
+
+    // Password validation on the server side
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+        return res.status(400).json({ error: "Password does not meet the required criteria" });
+    }
+
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const [result] = await db.query(`UPDATE LocalUser SET password = ?, modified_date = NOW() WHERE id = ?`, [hashedPassword, userId]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        res.json({ message: "Password reset successfully" });
+    } catch (error) {
+        console.error("❌ Error resetting password:", error);
+        res.status(500).json({ error: "Database error while resetting password" });
+    }
+});
+
 // Ensure LocalUser table exists before starting
 setupLocalUserTable();
 

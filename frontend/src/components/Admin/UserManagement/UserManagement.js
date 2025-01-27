@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AddLocalUser from "./AddLocalUser";
 import DomainUser from "./DomainUser";
+import LocalPasswordReset from "./LocalPasswordReset";
 import "./UserManagement.css";
 
 const UserManagement = () => {
@@ -13,6 +14,8 @@ const UserManagement = () => {
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isDomainUserOpen, setIsDomainUserOpen] = useState(false);
   const [selectedLocalUsers, setSelectedLocalUsers] = useState([]);
+  const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
+  const [userToReset, setUserToReset] = useState(null);
 
   useEffect(() => {
     fetchAllData();
@@ -78,9 +81,25 @@ const UserManagement = () => {
    * @param {number|string} userId - The ID of the user.
    */
   const handleCheckboxChange = (userId) => {
-    setSelectedLocalUsers((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
-    );
+    let updatedSelected = [];
+    if (selectedLocalUsers.includes(userId)) {
+      updatedSelected = selectedLocalUsers.filter((id) => id !== userId);
+    } else {
+      updatedSelected = [...selectedLocalUsers, userId];
+    }
+    setSelectedLocalUsers(updatedSelected);
+
+    // If exactly one user is selected, set them for password reset
+    if (updatedSelected.length === 1) {
+      setUserToReset(updatedSelected[0]);
+    } else {
+      setUserToReset(null);
+    }
+
+    // Close the Reset Password dialog if multiple or no users are selected
+    if (updatedSelected.length !== 1) {
+      setIsPasswordResetOpen(false);
+    }
   };
 
   /**
@@ -101,6 +120,24 @@ const UserManagement = () => {
       console.error("❌ Failed to delete users:", error);
       setError("Failed to delete selected users.");
     }
+  };
+
+  /**
+   * Handle Reset Password button click.
+   */
+  const handleResetPasswordClick = () => {
+    if (selectedLocalUsers.length === 1) {
+      setIsPasswordResetOpen(true);
+    }
+  };
+
+  /**
+   * Handler called when the password reset is completed.
+   */
+  const handlePasswordReset = () => {
+    fetchAllData();
+    setIsPasswordResetOpen(false);
+    setSelectedLocalUsers([]);
   };
 
   /**
@@ -145,11 +182,16 @@ const UserManagement = () => {
         </button>
       </div>
 
-      {selectedLocalUsers.length > 0 && (
-        <div className="delete-btn-container">
+      {(selectedLocalUsers.length > 0) && (
+        <div className="delete-reset-btn-container">
           <button className="delete-btn" onClick={handleDeleteUsers}>
-            Delete Selected Local Users ({selectedLocalUsers.length})
+            Delete Selected Local User(s) ({selectedLocalUsers.length})
           </button>
+          {selectedLocalUsers.length === 1 && (
+            <button className="reset-btn" onClick={handleResetPasswordClick}>
+              Reset Password
+            </button>
+          )}
         </div>
       )}
 
@@ -163,6 +205,12 @@ const UserManagement = () => {
         isOpen={isDomainUserOpen}
         onClose={() => setIsDomainUserOpen(false)}
         onUserSynced={handleUserAdded}
+      />
+      <LocalPasswordReset
+        isOpen={isPasswordResetOpen}
+        onClose={() => setIsPasswordResetOpen(false)}
+        userId={userToReset}
+        onPasswordReset={handlePasswordReset}
       />
 
       {/* Error Message */}

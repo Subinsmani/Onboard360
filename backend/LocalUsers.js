@@ -98,7 +98,7 @@ router.post('/localusers/delete', async (req, res) => {
 });
 
 // Authenticate User (Login)
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -122,6 +122,7 @@ router.post('/login', async (req, res) => {
         res.json({ message: "Login successful", userId: user.id, username: user.username });
 
     } catch (error) {
+        console.error("Login error:", error);
         res.status(500).json({ error: "Database error" });
     }
 });

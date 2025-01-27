@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import Profile from "./Profile";
 
 const Header = () => {
-  // State to manage hover
   const [hoveredLink, setHoveredLink] = useState(null);
 
   // Styles
@@ -47,7 +47,7 @@ const Header = () => {
 
   const linkHoverStyle = {
     ...linkStyle,
-    color: "#e67e22", // Hover color
+    color: "#e67e22",
   };
 
   const userSettingsStyle = {
@@ -61,12 +61,7 @@ const Header = () => {
     border: "none",
     borderRadius: "5px",
     outline: "none",
-  };
-
-  const iconStyle = {
-    fontSize: "1.2em",
-    cursor: "pointer",
-    transition: "transform 0.3s ease",
+    marginBottom: "0px",
   };
 
   return (
@@ -100,7 +95,7 @@ const Header = () => {
       {/* User Settings Section */}
       <div style={userSettingsStyle}>
         <input type="text" placeholder="Search Employee" style={inputStyle} />
-        <div style={iconStyle}>👤</div>
+        <Profile /> {/* ✅ Profile Dropdown Component */}
       </div>
     </header>
   );

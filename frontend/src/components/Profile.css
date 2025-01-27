@@ -1,0 +1,100 @@
+.profile-container {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+  }
+  
+  .profile-icon {
+    font-size: 3em;
+    color: #27ae60;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+  }
+  
+  .profile-popup {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    width: 220px;
+    text-align: center;
+    padding: 12px 0;
+    animation: fadeIn 0.3s ease-in-out forwards;
+  }
+  
+  .profile-popup.hide {
+    animation: fadeOut 0.3s ease-in-out forwards;
+  }
+  
+  .profile-header {
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #000;
+  }
+  
+  .profile-image {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+  }
+  
+  .profile-name {
+    font-size: 1em;
+    font-weight: bold;
+    margin-top: 8px;
+    color: black;
+  }
+  
+  .profile-menu {
+    padding: 10px 0;
+  }
+  
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    color: black;
+  }
+  
+  .menu-item:hover {
+    background: #f2f2f2;
+  }
+  
+  .menu-icon {
+    font-size: 1.2em;
+    color: red;
+  }
+  
+  .logout {
+    border-top: 2px solid black;
+    color: red;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fadeOut {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
+  

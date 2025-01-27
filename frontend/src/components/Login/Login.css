@@ -24,10 +24,10 @@
 
 /* Logo Styling */
 .login-logo {
-  width: 80px;  /* Adjust the logo size */
+  width: 80px;
   height: 80px;
   margin-bottom: 10px;
-  border-radius: 50%; /* Optional: Makes it round */
+  border-radius: 50%;
 }
 
 /* Login title */
@@ -75,10 +75,42 @@
 
 /* Add space below the last input field */
 .password-group {
-  margin-bottom: 50px; /* Increased gap between password field and button */
+  margin-bottom: 40px;
 }
 
-/* Compact Login button positioned at bottom-right */
+/* Account Type container at the bottom left */
+.account-type-container {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* Account Type label */
+.account-type-container label {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Account Type Dropdown */
+.account-type-container select {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background: white;
+  font-size: 14px;
+  width: 120px;
+}
+
+/* Disabled dropdown style */
+.account-type-container select:disabled {
+  background: #f0f0f0;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* Login button positioned at bottom-right */
 .login-button {
   position: absolute;
   right: 20px;
@@ -89,12 +121,28 @@
   border-radius: 8px;
   color: white;
   font-size: 16px;
+  font-weight: bold;
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
+  width: auto;
+  min-width: 100px;
 }
 
 .login-button:hover {
   transform: scale(1.05);
+}
+
+/* Error message now positioned below the login button */
+.error-message {
+  color: red;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
 }
 
 /* Responsive design */
@@ -103,12 +151,9 @@
     width: 90%;
     padding: 30px;
   }
-}
 
-.error-message {
-  color: red;
-  font-size: 14px;
-  margin-bottom: 10px;
-  text-align: center;
-  font-weight: bold;
+  .account-type-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

@@ -610,4 +610,63 @@ router.get('/domainusers', async (req, res) => {
     }
 });
 
+// Use for Authentication Domain User
+router.post("/ldapusers_login", async (req, res) => {
+    const { username, password, domain_id } = req.body;
+
+    if (!username || !password || !domain_id) {
+        return res.status(400).json({ error: "Username, password, and domain_id are required." });
+    }
+
+    try {
+        // Fetch user details including distinguishedname and domain details
+        const [userResults] = await db.query(
+            "SELECT distinguishedname, dc_name FROM ldap_users WHERE samaccountname = ? AND dc_name = (SELECT dc_name FROM Domains WHERE id = ?)",
+            [username, domain_id]
+        );
+
+        if (userResults.length === 0) {
+            return res.status(404).json({ error: "User not found in LDAP users table." });
+        }
+
+        const { distinguishedname, dc_name } = userResults[0];
+
+        // Fetch domain details for LDAP authentication
+        const [domainResults] = await db.query(
+            "SELECT domain_controller, read_only_user, read_only_user_password, ssl_enabled, port FROM Domains WHERE id = ?",
+            [domain_id]
+        );
+
+        if (domainResults.length === 0) {
+            return res.status(404).json({ error: "Domain not found." });
+        }
+
+        const { domain_controller, ssl_enabled, port } = domainResults[0];
+        const ldapUrl = `${ssl_enabled === "Yes" ? "ldaps" : "ldap"}://${domain_controller}:${port}`;
+
+        const client = ldap.createClient({ url: ldapUrl, timeout: 5000, connectTimeout: 5000 });
+
+        client.on("error", (err) => {
+            console.error("❌ LDAP Client Error:", err.message);
+            return res.status(500).json({ error: "LDAP Client Error", details: err.message });
+        });
+
+        // Authenticate user with LDAP
+        client.bind(distinguishedname, password, (err) => {
+            if (err) {
+                console.error(`❌ LDAP Authentication Failed for ${username}:`, err.message);
+                return res.status(401).json({ error: "Invalid credentials or domain unreachable." });
+            }
+
+            console.log(`✅ User ${username} authenticated successfully in domain ${dc_name}`);
+            client.unbind();
+            return res.json({ success: true, message: "Login successful!", user: { username, dc_name } });
+        });
+
+    } catch (error) {
+        console.error("❌ Error processing LDAP user login:", error.message);
+        res.status(500).json({ error: "Error processing LDAP login.", details: error.message });
+    }
+});
+
 module.exports = router;

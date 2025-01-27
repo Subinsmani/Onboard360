@@ -1,39 +1,106 @@
 const db = require("../db");
+const fs = require("fs").promises;
+const path = require("path");
 
-// Function to create `permissions` table and insert default permission
+// Function to create `permissions` table and synchronize with permissions.text
 async function setupPermissionsTable() {
-    try {
-        const [[{ count }]] = await db.query("SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'permissions'");
+    let connection;
 
-        if (count === 0) {
-            // Create the permissions table if it doesn't exist
-            await db.query(`
-                CREATE TABLE IF NOT EXISTS permissions (
-                    id INT UNSIGNED NOT NULL PRIMARY KEY,
-                    name VARCHAR(255) UNIQUE NOT NULL
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-            `);
-            console.log("✅ Permissions table is ready.");
+    try {
+        // Get a connection from the pool
+        connection = await db.getConnection();
+
+        // Create the permissions table if it doesn't exist
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS permissions (
+                id INT UNSIGNED NOT NULL PRIMARY KEY,
+                name VARCHAR(255) UNIQUE NOT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+        `);
+        console.log("✅ Permissions table is ready.");
+
+        // Path to the permissions.text file
+        const permissionsFilePath = path.join(__dirname, "RolesAndPermissions", "permissions.text");
+
+        // Read and parse the permissions.text file
+        const fileContent = await fs.readFile(permissionsFilePath, "utf-8");
+        const permissionsFromFile = fileContent
+            .split("\n")
+            .map(line => line.trim())
+            .filter(line => line.length > 0)
+            .map(line => {
+                const [idStr, ...nameParts] = line.split(" ");
+                return {
+                    id: parseInt(idStr, 10),
+                    name: nameParts.join(" ")
+                };
+            });
+
+        // Fetch current permissions from the database
+        const [currentPermissions] = await connection.query("SELECT id, name FROM permissions");
+        const currentPermissionsMap = new Map();
+        currentPermissions.forEach(permission => {
+            currentPermissionsMap.set(permission.id, permission.name);
+        });
+
+        // Prepare lists for additions and deletions
+        const permissionsToAdd = [];
+        const permissionsToRemove = [];
+
+        const filePermissionsMap = new Map();
+        permissionsFromFile.forEach(permission => {
+            filePermissionsMap.set(permission.id, permission.name);
+            if (!currentPermissionsMap.has(permission.id)) {
+                permissionsToAdd.push(permission);
+            }
+        });
+
+        // Identify permissions to remove
+        currentPermissions.forEach(permission => {
+            if (!filePermissionsMap.has(permission.id)) {
+                permissionsToRemove.push(permission.id);
+            }
+        });
+
+        // If there are no changes, exit the function
+        if (permissionsToAdd.length === 0 && permissionsToRemove.length === 0) {
+            return;
         }
 
-        // Insert the default permission "Onboard360_Admin" if the table is empty
-        await insertDefaultPermission();
+        // Begin transaction
+        await connection.beginTransaction();
+
+        try {
+            // Add new permissions
+            if (permissionsToAdd.length > 0) {
+                const insertValues = permissionsToAdd
+                    .map(() => "(?, ?)")
+                    .join(", ");
+                const insertParams = [];
+                permissionsToAdd.forEach(p => {
+                    insertParams.push(p.id, p.name);
+                });
+                await connection.query(`INSERT INTO permissions (id, name) VALUES ${insertValues}`, insertParams);
+            }
+
+            // Remove deleted permissions
+            if (permissionsToRemove.length > 0) {
+                const placeholders = permissionsToRemove.map(() => "?").join(", ");
+                await connection.query(`DELETE FROM permissions WHERE id IN (${placeholders})`, permissionsToRemove);
+            }
+
+            // Commit transaction
+            await connection.commit();
+        } catch (transactionError) {
+            // Rollback transaction in case of error
+            await connection.rollback();
+            throw transactionError;
+        }
+
     } catch (error) {
         console.error("Error setting up permissions table:", error);
-    }
-}
-
-// Insert the default "Onboard360_Admin" permission into the permissions table
-async function insertDefaultPermission() {
-    try {
-        const [[{ count }]] = await db.query("SELECT COUNT(*) AS count FROM permissions WHERE name = 'Onboard360_Admin'");
-
-        if (count === 0) {
-            // Insert the default "Onboard360_Admin" permission
-            await db.query("INSERT INTO permissions (id, name) VALUES (1, 'Onboard360_Admin')");
-        }
-    } catch (error) {
-        console.error("Error inserting default permission:", error);
+    } finally {
+        if (connection) connection.release();
     }
 }
 

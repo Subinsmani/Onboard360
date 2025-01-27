@@ -37,8 +37,6 @@ router.post('/localusers', async (req, res) => {
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Check if username or email exists
         const [existingUsers] = await db.query(`SELECT * FROM LocalUser WHERE username = ? OR email_address = ?`, [username, email_address]);
 
         if (existingUsers.length > 0) {
@@ -52,8 +50,6 @@ router.post('/localusers', async (req, res) => {
         );
 
         const newUserId = insertResult.insertId;
-
-        // Add User to Selected Group's `local_user_ids`
         if (group_id) {
             await db.query(
                 `UPDATE groups 

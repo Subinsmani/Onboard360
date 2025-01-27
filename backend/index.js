@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 require("dotenv").config();
+const { setupTables } = require("./Routes/CreateTables");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -21,20 +22,9 @@ const permissionsRoutes = require("./Routes/RolesAndPermissions/Permissions").ro
 const rolesRoutes = require("./Routes/RolesAndPermissions/Roles").router;
 const rolePermissionsRoutes = require("./Routes/RolesAndPermissions/RolePermissions").router;
 
-// Ensure all database tables are created in the correct order
-const { setupPermissionsTable } = require("./Routes/RolesAndPermissions/Permissions");
-const { setupRolesTable } = require("./Routes/RolesAndPermissions/Roles");
-const { setupRolePermissionsTable } = require("./Routes/RolesAndPermissions/RolePermissions");
-
-// Function to setup database before starting the server
-async function setupDatabase() {
-  try {
-    console.log("🚀 Setting up database tables...");
-    await setupPermissionsTable();
-    await setupRolesTable();
-    await setupRolePermissionsTable();
-
-    // Register API routes (only after database setup)
+// Setup database tables before starting the server
+setupTables().then(() => {
+    // Register API routes after database setup
     app.use("/api", localUsersRoutes);
     app.use("/api", domainConnectionRoutes);
     app.use("/api", groupsRoutes);
@@ -43,16 +33,11 @@ async function setupDatabase() {
     app.use("/api", rolesRoutes);
     app.use("/api", rolePermissionsRoutes);
 
-    // Start the server only after all tables are set up
+    // Start the server
     app.listen(PORT, () => {
-      console.log(`✅ Server is running on port ${PORT}`);
+        console.log(`✅ Server is running on port ${PORT}`);
     });
-
-  } catch (error) {
-    console.error("❌ Error setting up database:", error);
-    process.exit(1); // Exit process if database setup fails
-  }
-}
-
-// Initialize the database and start the server
-setupDatabase();
+}).catch((error) => {
+    console.error("❌ Error during database setup:", error);
+    process.exit(1);
+});

@@ -68,3 +68,14 @@
   font-weight: bold;
   margin-top: 10px;
 }
+
+.permission-badge {
+  display: inline-block;
+  background-color: #007bff;
+  color: white;
+  padding: 4px 8px;
+  margin: 2px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+}

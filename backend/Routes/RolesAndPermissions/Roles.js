@@ -1,43 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
-const { setupPermissionsTable } = require("./Permissions");
-
-// Ensure `roles` table is created after `permissions`
-async function setupRolesTable() {
-  try {
-    await setupPermissionsTable();
-
-    await db.query(`
-      CREATE TABLE IF NOT EXISTS roles (
-        id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        roles_name VARCHAR(255) NOT NULL UNIQUE,
-        permission_id INT UNSIGNED NOT NULL,
-        FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
-    `);
-
-    // Check if Super Admin already exists
-    const [[superAdminExists]] = await db.query("SELECT COUNT(*) AS count FROM roles WHERE id = 1");
-
-    if (superAdminExists.count === 0) {
-      const [[permission]] = await db.query("SELECT id FROM permissions WHERE name = 'Onboard360_Admin'");
-
-      if (permission) {
-        const permissionId = permission.id;
-
-        await db.query(
-          "INSERT INTO roles (id, roles_name, permission_id) VALUES (1, 'Super Admin', ?) ON DUPLICATE KEY UPDATE roles_name = 'Super Admin'",
-          [permissionId]
-        );
-      }
-    }
-    
-    console.log("✅ Roles table is ready.");
-  } catch (error) {
-    console.error("❌ Error setting up roles:", error);
-  }
-}
 
 // Get all roles
 router.get("/roles", async (req, res) => {
@@ -49,20 +12,20 @@ router.get("/roles", async (req, res) => {
   }
 });
 
-// Add a new role (except Super Admin)
+// Add a new role (Super Admin not allowed)
 router.post("/roles", async (req, res) => {
   try {
-    const { name, permission_id } = req.body;
+    const { name } = req.body;
 
-    if (!name || !permission_id) {
-      return res.status(400).json({ error: "Role name and permission_id are required." });
+    if (!name) {
+      return res.status(400).json({ error: "Role name is required." });
     }
 
     if (name.toLowerCase() === "super admin") {
       return res.status(403).json({ error: "Super Admin role cannot be modified." });
     }
 
-    await db.query("INSERT INTO roles (roles_name, permission_id) VALUES (?, ?)", [name, permission_id]);
+    await db.query("INSERT INTO roles (roles_name) VALUES (?)", [name]);
 
     res.json({ message: "Role created successfully" });
   } catch (err) {
@@ -70,7 +33,7 @@ router.post("/roles", async (req, res) => {
   }
 });
 
-// Delete a role (except Super Admin)
+// Delete a role (Super Admin not allowed)
 router.delete("/roles/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -86,12 +49,51 @@ router.delete("/roles/:id", async (req, res) => {
   }
 });
 
-// Ensure correct table creation order
-async function setupTables() {
-  await setupPermissionsTable();
-  await setupRolesTable();
-}
+// Create a role and assign permissions
+router.post("/roles_create", async (req, res) => {
+  try {
+    const { name, permissions } = req.body;
 
-setupTables();
+    if (!name) {
+      return res.status(400).json({ error: "Role name is required." });
+    }
 
-module.exports = { setupRolesTable, router };
+    if (name.toLowerCase() === "super admin") {
+      return res.status(403).json({ error: "Super Admin role cannot be modified." });
+    }
+
+    // Step 1: Insert new role
+    const [roleResult] = await db.query("INSERT INTO roles (roles_name) VALUES (?)", [name]);
+    const roleId = roleResult.insertId;
+
+    // Step 2: Insert permissions if provided
+    if (Array.isArray(permissions) && permissions.length > 0) {
+      const rolePermissions = permissions.map((permissionId) => [roleId, permissionId]);
+      await db.query("INSERT INTO role_permissions (role_id, permission_id) VALUES ?", [rolePermissions]);
+    }
+
+    res.json({ message: "Role created successfully", roleId });
+  } catch (err) {
+    console.error("❌ Failed to create role:", err);
+    res.status(500).json({ error: "Failed to create role", details: err.message });
+  }
+});
+
+// API to fetch a specific role by ID
+router.get("/roles/:role_id", async (req, res) => {
+  try {
+      const { role_id } = req.params;
+
+      const [role] = await db.query("SELECT id, roles_name FROM roles WHERE id = ?", [role_id]);
+
+      if (role.length === 0) {
+          return res.status(404).json({ error: "Role not found" });
+      }
+
+      res.json(role[0]);
+  } catch (error) {
+      res.status(500).json({ error: "Failed to fetch role", details: error.message });
+  }
+});
+
+module.exports = { router };

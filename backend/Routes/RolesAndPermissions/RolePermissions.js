@@ -1,77 +1,111 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../../db");
-const { setupPermissionsTable } = require("./Permissions");
-const { setupRolesTable } = require("./Roles");
-const { setupGroupsTable } = require("../../Groups");
 
-// Sets up the role_permissions table
-async function setupRolePermissionsTable() {
-    try {
-        console.log("🚀 Ensuring role_permissions table exists...");
-
-        await db.query(`
-            CREATE TABLE IF NOT EXISTS role_permissions (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                role_id INT UNSIGNED NOT NULL,
-                permission_id INT UNSIGNED NOT NULL,
-                FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
-                FOREIGN KEY (permission_id) REFERENCES permissions(id) ON DELETE CASCADE
-            )
-        `);
-
-        console.log("✅ role_permissions table is ready.");
-
-        // Ensure the first row is always present
-        await ensureFirstRow();
-    } catch (error) {
-        console.error("❌ Error ensuring role_permissions table exists:", error);
-    }
-}
-
-// Ensures at least one role-permission entry exists
-async function ensureFirstRow() {
-    try {
-        // Ensure Super Admin role exists
-        await db.query(`INSERT IGNORE INTO roles (id, roles_name, permission_id) VALUES (1, 'Super Admin', 1);`);
-
-        // Ensure first row in `role_permissions` (ID=1, Non-editable)
-        await db.query(`
-            INSERT IGNORE INTO role_permissions (id, role_id, permission_id) VALUES (1, 1, 1);
-        `);
-    } catch (error) {
-        console.error("❌ Error ensuring first row in role_permissions:", error);
-        throw error;
-    }
-}
-
-// API to get role-permission-group mappings with actual names
+// API to fetch role-permission mappings
 router.get("/role_permissions", async (req, res) => {
     try {
         const [rolePermissions] = await db.query(`
             SELECT 
-                rp.id,
-                rp.role_id, 
-                r.roles_name AS role_name, 
-                rp.permission_id, 
-                p.name AS permission_name
+                rp.id AS role_permission_id, 
+                r.id AS role_id,
+                r.roles_name AS role_name,
+                IFNULL(GROUP_CONCAT(p.name ORDER BY p.name ASC SEPARATOR ', '), '') AS permissions
             FROM role_permissions rp
             LEFT JOIN roles r ON rp.role_id = r.id
             LEFT JOIN permissions p ON rp.permission_id = p.id
+            GROUP BY r.id, r.roles_name
             ORDER BY rp.id;
         `);
 
         res.json(rolePermissions);
     } catch (error) {
-        console.error("❌ Error fetching role permissions:", error);
         res.status(500).json({ error: "Failed to fetch role permissions", details: error.message });
     }
 });
 
-// Initialize table setup (after roles and permissions are fully set up)
-setupPermissionsTable();
-setupRolesTable();
-setupGroupsTable();
-setupRolePermissionsTable();
+// API to assign permissions to roles
+router.post("/role_permissions", async (req, res) => {
+    try {
+        const { role_id, permission_ids } = req.body;
 
-module.exports = { setupRolePermissionsTable, router };
+        if (!role_id || !Array.isArray(permission_ids) || permission_ids.length === 0) {
+            return res.status(400).json({ error: "Role ID and permission IDs are required." });
+        }
+
+        // Insert new role-permission mappings
+        const rolePermissions = permission_ids.map((permissionId) => [role_id, permissionId]);
+        await db.query("INSERT INTO role_permissions (role_id, permission_id) VALUES ?", [rolePermissions]);
+
+        res.json({ message: "Permissions assigned to role successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to assign permissions", details: error.message });
+    }
+});
+
+// API to remove a permission from a role
+router.delete("/role_permissions", async (req, res) => {
+    try {
+        const { role_id, permission_id } = req.body;
+
+        if (!role_id || !permission_id) {
+            return res.status(400).json({ error: "Role ID and permission ID are required." });
+        }
+
+        await db.query("DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?", [role_id, permission_id]);
+
+        res.json({ message: "Permission removed from role successfully" });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to remove permission", details: error.message });
+    }
+});
+
+// API to fetch permissions for a single role
+router.get("/role_permissions/:role_id", async (req, res) => {
+    try {
+        const { role_id } = req.params;
+        const [rolePermissions] = await db.query(`
+            SELECT 
+                r.id AS role_id,
+                r.roles_name AS role_name,
+                IFNULL(GROUP_CONCAT(p.name ORDER BY p.name ASC SEPARATOR ', '), '') AS permissions
+            FROM roles r
+            LEFT JOIN role_permissions rp ON r.id = rp.role_id
+            LEFT JOIN permissions p ON rp.permission_id = p.id
+            WHERE r.id = ?
+            GROUP BY r.id, r.roles_name;
+        `, [role_id]);
+
+        if (rolePermissions.length === 0) {
+            return res.status(404).json({ error: "Role not found or no permissions assigned." });
+        }
+
+        res.json(rolePermissions[0]);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch role details", details: error.message });
+    }
+});
+
+// DELETE all permissions for a specific role
+router.delete("/role_permissions/:role_id", async (req, res) => {
+    try {
+        const { role_id } = req.params;
+
+        if (!role_id) {
+            return res.status(400).json({ error: "Role ID is required." });
+        }
+
+        const [result] = await db.query("DELETE FROM role_permissions WHERE role_id = ?", [role_id]);
+
+        // Fix: If no rows were deleted, still return success
+        if (result.affectedRows === 0) {
+            return res.status(200).json({ message: "No existing permissions to delete, proceeding with update." });
+        }
+
+        res.json({ message: "Permissions deleted successfully." });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to delete permissions", details: error.message });
+    }
+});
+
+module.exports = { router };

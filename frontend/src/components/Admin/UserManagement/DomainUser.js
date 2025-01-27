@@ -45,8 +45,6 @@ const DomainUser = ({ isOpen, onClose }) => {
       setDomains(domainWithStatus);
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching domains:", error);
-      setError("Failed to load domain list.");
       setLoading(false);
     }
   };

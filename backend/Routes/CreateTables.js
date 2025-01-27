@@ -166,12 +166,87 @@ async function setupRolePermissionsTable() {
     }
 }
 
+// **New Function to Create `Domains` Table**
+async function setupDomainsTable() {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS Domains (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                domain_name VARCHAR(255) NOT NULL UNIQUE,
+                domain_controller VARCHAR(255) NOT NULL,
+                read_only_user VARCHAR(255) NOT NULL,
+                read_only_user_password TEXT NOT NULL,
+                base_dn VARCHAR(255) NOT NULL,
+                dc_name VARCHAR(255) NOT NULL,
+                ssl_enabled ENUM('Yes', 'No') NOT NULL DEFAULT 'No',
+                port INT NOT NULL,
+                created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+        `);
+        console.log("✅ Domains table is ready.");
+    } catch (error) {
+        console.error("Error setting up Domains table:", error);
+    }
+}
+
+// **New Function to Create `ldap_users` Table**
+async function setupLdapUsersTable() {
+    try {
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS ldap_users (
+                ldap_user_id INT AUTO_INCREMENT PRIMARY KEY,
+                samaccountname VARCHAR(255) UNIQUE,
+                userprincipalname VARCHAR(255),
+                cn VARCHAR(255),
+                displayname VARCHAR(255),
+                givenname VARCHAR(255),
+                sn VARCHAR(255),
+                distinguishedname TEXT,
+                objectguid VARCHAR(255),
+                objectsid VARCHAR(255),
+                memberof TEXT,
+                useraccountcontrol INT,
+                accountexpires BIGINT,
+                pwdlastset BIGINT,
+                badpasswordtime BIGINT,
+                badpwdcount INT,
+                lastlogon BIGINT,
+                lastlogontimestamp BIGINT,
+                logoncount INT,
+                admincount INT,
+                mail VARCHAR(255),
+                mobile VARCHAR(255),
+                telephonenumber VARCHAR(255),
+                title VARCHAR(255),
+                department VARCHAR(255),
+                company VARCHAR(255),
+                manager TEXT,
+                streetaddress TEXT,
+                l VARCHAR(255),
+                st VARCHAR(255),
+                postalcode VARCHAR(255),
+                co VARCHAR(255),
+                primarygroupid INT,
+                whencreated DATETIME,
+                whenchanged DATETIME,
+                dc_name VARCHAR(255) NOT NULL,
+                UNIQUE KEY unique_samaccountname (samaccountname)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+        `);
+        console.log("✅ ldap_users table is ready.");
+    } catch (error) {
+        console.error("Error setting up ldap_users table:", error);
+    }
+}
+
 // Initialize tables setup in correct order
 async function setupTables() {
     try {
         await setupPermissionsTable();
         await setupRolesTable();
         await setupRolePermissionsTable();
+        await setupDomainsTable();
+        await setupLdapUsersTable();
     } catch (error) {
         console.error("Error setting up tables:", error);
     }

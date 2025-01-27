@@ -13,9 +13,11 @@ app.use(cors());
 
 // Import Routes
 const localUsersRoutes = require("./LocalUsers");
-const domainConnectionRoutes = require("./DomainConnection");
 const groupsRoutes = require("./Groups").router;
 const usersRoutes = require("./Users");
+
+// Import Domain Routes
+const domainConnectionRoutes = require("./Routes/Domain/DomainConnection")
 
 // Import Role & Permission Routes
 const permissionsRoutes = require("./Routes/RolesAndPermissions/Permissions").router;
